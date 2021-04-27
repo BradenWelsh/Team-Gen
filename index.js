@@ -1,11 +1,13 @@
 const fs = require('fs');
 const inquirer = require('inquirer');
 
+const generatePage = require('./sc/test');
+
 //Employees
 const Employee = require('./lib/employee');
 const Engineer = require('./lib/engineer');
-const Manager = require('./lib/manager');
 const Intern = require('./lib/intern');
+const Manager = require('./lib/manager');
 
 //user answers
 let engineerArr = [];
@@ -14,10 +16,11 @@ let internArr = [];
 let employeeArr = {engineerArr, managerArr, internArr};
 //User questions
 function promptUser(){
-    return inquirer([
+    return inquirer
+    .prompt([
         {
             type: 'text',
-            name: 'employeeName',
+            name: 'employee',
             message: "What is the employee's name? (Required!)",
             validate: employeeInput => {
                 if (employeeInput) {
@@ -32,7 +35,7 @@ function promptUser(){
             type: 'text',
             name: 'id',
             message: "What is the employee's id? (Required!)",
-            validate: employeeInput => {
+            validate: idnInput => {
                 if (idnInput) {
                     return true;
                 }else {
@@ -43,10 +46,10 @@ function promptUser(){
         },
         {
             type: 'text',
-            name: 'id',
+            name: 'email',
             message: "What is the employee's email? (Required!)",
             validate: emailInput => {
-                if (idnInput) {
+                if (emailInput) {
                     return true;
                 }else {
                     console.log ("Please enter the employee's email.");
@@ -58,12 +61,12 @@ function promptUser(){
             type: 'list',
             name: 'rank',
             message: "What is the employee's rank in the company? (Use arrow keys!)",
-            choices: ['Engineer', 'Manger', 'Intern']
+            choices: ['Engineer', 'Manager', 'Intern']
         },
     ])
 //Rank questions
-    .then(({employeeName, id, emailInput, rank}) => {
-        if (role === 'Manager'){
+    .then(({employee, id, email, rank}) => {
+        if (rank === 'Manager'){
             return inquirer
             .prompt([
                 {
@@ -71,7 +74,7 @@ function promptUser(){
                     name: 'number',
                     message: "What is the Manager's number? (Required!)",
                     validate: numberInput => {
-                        if (officeInput) {
+                        if (numberInput) {
                             return true;
                         } else {
                             console.log ("Please enter the Manager's number.");
@@ -85,13 +88,13 @@ function promptUser(){
                     message: 'Would you like to add another associate?'
                 },
             ])
-            .then(({officeInput, another}) => {
-                managerArr.push(new Manager(employeeName, id, emailInput))
+            .then(({number, another}) => {
+                managerArr.push(new Manager(employee, id, email, number))
                 if (another){
                     return promptUser();
                 }
             })
-        }else if (role === 'Engineer') {
+        }else if (rank === 'Engineer') {
             return inquirer
                 .prompt([
                 {
@@ -114,12 +117,12 @@ function promptUser(){
                 },
             ])
             .then(({github, another}) => {
-                engineerArr.push(new Manager(employeeName, id, emailInput, githubInput))
-                if (more){
+                engineerArr.push(new Engineer(employee, id, email, github))
+                if (another){
                     return promptUser();
                 }
             })
-        } else if (role === 'Intern') {
+        } else if (rank === 'Intern') {
             return inquirer
             .prompt([
                 {
@@ -134,10 +137,15 @@ function promptUser(){
                             return false;
                         }
                     }
-                }
+                },
+                {
+                    type: 'confirm',
+                    name: 'another',
+                    message: 'Would you like to add another associate?'
+                },
             ])
             .then(({school, another}) => {
-                internArr.push(new Intern(employeeName, id, emailInput, schInput))
+                internArr.push(new Intern(employee, id, email, school))
                 if (another) {
                     return promptUser();
                 }
@@ -146,3 +154,15 @@ function promptUser(){
     }) 
 }
 
+promptUser()
+    .then(eD => {
+        return generatePage(employeeArr)
+    })
+    .then (htmlFile =>{
+        fs.writeFile('./dist/index.html', htmlFile, err=> {
+            console.log('File was successfully created.')
+            if(err){
+                return;
+            }
+        })
+    })
